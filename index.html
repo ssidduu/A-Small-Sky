@@ -99,10 +99,11 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
 .caption{font-family:var(--f-display);font-style:italic;font-size:22px;color:var(--gold);min-height:1.3em}
 
 /* 03 orbit */
-.system{position:relative;width:min(88vw,460px);aspect-ratio:1;max-width:100%}
+.system{position:relative;width:min(94vw,520px);aspect-ratio:1;max-width:100%}
+.system:hover .arm,.system:hover .planet,.system:focus-within .arm,.system:focus-within .planet{animation-play-state:paused}
 .ring{position:absolute;border-radius:50%;border:1px dashed rgba(246,241,231,.14);left:50%;top:50%;transform:translate(-50%,-50%)}
 .sun{
-  position:absolute;left:50%;top:50%;width:18%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  position:absolute;left:50%;top:50%;width:15%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
   background:radial-gradient(circle at 35% 35%, #fff7e0, #ffc15e 40%, #e8621d 100%);
   box-shadow:0 0 70px 14px rgba(255,150,50,.5);display:grid;place-items:center;
   font-family:var(--f-display);font-style:italic;color:#3b1a05;font-size:clamp(15px,3.6vw,20px);
@@ -124,6 +125,9 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
 .planet:focus-visible{outline:1px dashed var(--gold);border-radius:12px}
 .system.paused .arm,.system.paused .planet{animation-play-state:paused}
 @keyframes spin{to{transform:rotate(360deg)}}
+.idea{font-family:"Cormorant Garamond", Georgia, serif;font-style:italic;font-size:22px;text-align:center;width:min(100%,340px);
+  padding:10px 16px;border-radius:14px;border:1px solid rgba(251,243,230,.25);background:rgba(251,243,230,.06);color:var(--star)}
+.idea:focus{outline:none;border-color:var(--gold)}
 .picked{font-family:var(--f-display);font-style:italic;font-size:26px;color:var(--gold);min-height:1.2em}
 
 /* 04 calendar */
@@ -215,18 +219,20 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
   <div class="label">Step <b>02</b> / 03 · Pick a planet</div>
   <h2>Where are <em>we</em> going?</h2>
   <div class="system" id="system">
-    <div class="ring" style="width:56%;height:56%"></div>
-    <div class="ring" style="width:88%;height:88%"></div>
+    <div class="ring" style="width:44%;height:44%"></div>
+    <div class="ring" style="width:68%;height:68%"></div>
+    <div class="ring" style="width:92%;height:92%"></div>
     <div class="sun">us</div>
   </div>
   <div class="picked" id="picked"></div>
+  <input class="idea" id="idea" type="text" maxlength="60" placeholder="tell me your idea…" hidden>
   <button class="btn primary" id="toNight" disabled>This one →</button>
 </section>
 
 <!-- 04 night -->
 <section class="scene scroll" id="night">
-  <div class="label">Step <b>03</b> / 03 · Pick a night</div>
-  <h2>Pick a <em>night</em>, any night.</h2>
+  <div class="label">Step <b>03</b> / 03 · Pick a day</div>
+  <h2>When are <em>you</em> free?</h2>
   <div class="cal" id="cal">
     <div class="cal-head">
       <div class="cal-month" id="calMonth"></div>
@@ -236,7 +242,8 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
   </div>
   <div class="picked-day" id="pickedDay" aria-live="polite"></div>
   <div class="row" id="times">
-    <button class="chip" aria-pressed="false" data-v="Lazy afternoon" data-t="1 – 4 pm">Lazy afternoon<small>1 – 4 pm</small></button>
+    <button class="chip" aria-pressed="false" data-v="Morning" data-t="10 am – 12">Morning<small>10 am – 12</small></button>
+    <button class="chip" aria-pressed="false" data-v="Lunchtime" data-t="12 – 3 pm">Lunchtime<small>12 – 3 pm</small></button>
     <button class="chip" aria-pressed="false" data-v="Golden hour" data-t="5 – 7 pm">Golden hour<small>5 – 7 pm</small></button>
     <button class="chip" aria-pressed="false" data-v="After dark" data-t="7 – 10 pm">After dark<small>7 – 10 pm</small></button>
     <button class="chip" aria-pressed="false" data-v="Midnight walk" data-t="10 pm +">Midnight walk<small>10 pm +</small></button>
@@ -420,13 +427,22 @@ $("yes").onclick = () => {
 };
 
 /* ── 03 orbit ── */
+const g = (a, b) => `radial-gradient(circle at 35% 30%, ${a}, ${b})`;
 const PLANETS = [
-  { n:"Coffee & a long talk",   short:"Coffee",      r:"28%", s:"30px", d:"32s", delay:"-4s",  bg:"radial-gradient(circle at 35% 30%, #f3d9b1, #8a5a3c)", halo:"#f3d9b1" },
-  { n:"Dinner somewhere pretty",short:"Dinner",      r:"28%", s:"36px", d:"32s", delay:"-20s", bg:"radial-gradient(circle at 35% 30%, #ffc0d4, #b3325f)", halo:"#ff8fb3" },
-  { n:"Movie + shared popcorn", short:"Movie",       r:"44%", s:"34px", d:"54s", delay:"-2s",  bg:"radial-gradient(circle at 35% 30%, #cbc6ff, #4a3fb0)", halo:"#a49cff" },
-  { n:"Long drive, loud music", short:"Long drive",  r:"44%", s:"40px", d:"54s", delay:"-15s", bg:"radial-gradient(circle at 35% 30%, #a6f0e0, #1f7a73)", halo:"#7fe3cf" },
-  { n:"Street food adventure",  short:"Street food", r:"44%", s:"32px", d:"54s", delay:"-29s", bg:"radial-gradient(circle at 35% 30%, #ffe19a, #d4642a)", halo:"#ffd58c" },
-  { n:"Stargazing, obviously",  short:"Stargazing",  r:"44%", s:"28px", d:"54s", delay:"-42s", bg:"radial-gradient(circle at 35% 30%, #ffffff, #7a86b8)", halo:"#ffffff" },
+  // inner ring
+  { n:"Coffee & a long talk",    short:"Coffee",      r:"22%", s:"26px", d:"30s", delay:"0s",    bg:g("#f3d9b1","#8a5a3c"), halo:"#f3d9b1" },
+  { n:"A lazy lunch together",   short:"Lunch",       r:"22%", s:"28px", d:"30s", delay:"-10s",  bg:g("#d8f5a2","#5f8f2a"), halo:"#c8ef8a" },
+  { n:"Dessert run",             short:"Dessert",     r:"22%", s:"24px", d:"30s", delay:"-20s",  bg:g("#ffe0ef","#d4679a"), halo:"#ffc0da" },
+  // middle ring
+  { n:"Dinner somewhere pretty", short:"Dinner",      r:"34%", s:"32px", d:"46s", delay:"-3s",   bg:g("#ffc0d4","#b3325f"), halo:"#ff8fb3" },
+  { n:"Movie + shared popcorn",  short:"Movie",       r:"34%", s:"30px", d:"46s", delay:"-14.5s",bg:g("#cbc6ff","#4a3fb0"), halo:"#a49cff" },
+  { n:"Bowling (loser buys fries)", short:"Bowling",  r:"34%", s:"28px", d:"46s", delay:"-26s",  bg:g("#ffd0b0","#c2410c"), halo:"#ffb27a" },
+  { n:"Arcade & gaming",         short:"Arcade",      r:"34%", s:"26px", d:"46s", delay:"-37.5s",bg:g("#b6f3ff","#1f6f9c"), halo:"#8fe6ff" },
+  // outer ring
+  { n:"Long drive, loud music",  short:"Long drive",  r:"46%", s:"34px", d:"64s", delay:"-6s",   bg:g("#a6f0e0","#1f7a73"), halo:"#7fe3cf" },
+  { n:"Street food adventure",   short:"Street food", r:"46%", s:"30px", d:"64s", delay:"-22s",  bg:g("#ffe19a","#d4642a"), halo:"#ffd58c" },
+  { n:"Stargazing, obviously",   short:"Stargazing",  r:"46%", s:"26px", d:"64s", delay:"-38s",  bg:g("#ffffff","#7a86b8"), halo:"#ffffff" },
+  { n:null,                      short:"Your idea ✎", r:"46%", s:"28px", d:"64s", delay:"-54s",  bg:g("#fff3c4","#9a7b2c"), halo:"#ffe7a0", custom:true },
 ];
 const sys = $("system");
 PLANETS.forEach(p => {
@@ -439,12 +455,23 @@ PLANETS.forEach(p => {
     sys.querySelectorAll(".planet").forEach(x => x.setAttribute("aria-pressed", "false"));
     btn.setAttribute("aria-pressed", "true");
     sys.classList.add("paused");
-    state.plan = p.n;
-    $("picked").textContent = p.n;
-    $("toNight").disabled = false;
+    $("idea").hidden = !p.custom;
+    if(p.custom){
+      $("picked").textContent = "your idea, then";
+      $("idea").focus();
+      state.plan = $("idea").value.trim() || null;
+    } else {
+      state.plan = p.n;
+      $("picked").textContent = p.n;
+    }
+    $("toNight").disabled = !state.plan;
     chime(Math.floor(Math.random()*10));
   };
   sys.appendChild(arm);
+});
+$("idea").addEventListener("input", () => {
+  state.plan = $("idea").value.trim() || null;
+  $("toNight").disabled = !state.plan;
 });
 $("toNight").onclick = () => go("night");
 
