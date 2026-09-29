@@ -184,6 +184,28 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
   letter-spacing:.15em;text-transform:uppercase;color:var(--dim);opacity:.5;background:none;border:0;cursor:pointer;z-index:3}
 #sound{position:fixed;left:16px;bottom:calc(14px + env(safe-area-inset-bottom,0px));font-family:var(--f-mono);font-size:10px;
   letter-spacing:.15em;text-transform:uppercase;color:var(--dim);background:none;border:0;cursor:pointer;z-index:3}
+
+/* Pip: a tiny star who keeps her company */
+#pip{position:fixed;right:16px;bottom:calc(44px + env(safe-area-inset-bottom,0px));z-index:4;display:flex;align-items:flex-end;gap:8px;
+  pointer-events:none;flex-direction:row-reverse}
+#pipBody{width:64px;height:64px;border:0;background:none;padding:0;cursor:pointer;pointer-events:auto;animation:bob 3.2s ease-in-out infinite;
+  filter:drop-shadow(0 0 14px rgba(255,190,100,.55));transition:transform .4s cubic-bezier(.3,1.6,.5,1)}
+#pipBody svg{width:100%;height:100%;overflow:visible}
+#pipBody:focus-visible{outline:2px dashed var(--gold);border-radius:50%}
+#pipBody.wiggle{animation:wiggle .6s ease}
+#pipBody.spin{animation:spinhop 1s cubic-bezier(.3,1.4,.5,1)}
+#pip .eyes{transform-origin:32px 32px;transition:transform .08s}
+#pip .blink .eyes{transform:scaleY(.1)}
+@keyframes bob{50%{transform:translateY(-7px) rotate(4deg)}}
+@keyframes wiggle{20%{transform:rotate(-14deg)}40%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(5deg)}}
+@keyframes spinhop{40%{transform:translateY(-26px) rotate(200deg) scale(1.15)}100%{transform:rotate(360deg)}}
+.bubble{max-width:min(230px,62vw);background:var(--star);color:#2a1a0c;font-family:"Cormorant Garamond", Georgia, serif;font-style:italic;
+  font-weight:500;font-size:18px;line-height:1.25;padding:10px 14px;border-radius:18px 18px 4px 18px;margin-bottom:34px;
+  box-shadow:0 8px 24px -8px rgba(0,0,0,.6);opacity:0;transform:translateY(6px) scale(.96);transition:opacity .3s, transform .3s;text-align:left}
+.bubble.on{opacity:1;transform:none}
+.tap-star{position:fixed;pointer-events:none;color:var(--gold);font-size:14px;z-index:2;animation:tapstar 1s ease-out forwards;text-shadow:0 0 10px rgba(255,190,100,.9)}
+@keyframes tapstar{from{transform:translate(-50%,-50%) scale(.4)}to{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1) rotate(90deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){#pipBody{animation:none}}
 @media (prefers-reduced-motion:reduce){
   .scene{transition:opacity .3s, visibility 0s linear .3s;filter:none;transform:none}
   .arm,.planet{animation:none!important}
@@ -270,6 +292,18 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
 
 <button id="sound" aria-pressed="false">♪ Sound off</button>
 <button id="skip" hidden>skip →</button>
+<div id="pip" aria-live="polite">
+  <button id="pipBody" aria-label="Pip, a tiny star. Tap to say hi">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <defs><radialGradient id="pipG" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff6d8"/><stop offset=".55" stop-color="#ffc56a"/><stop offset="1" stop-color="#f08a2c"/></radialGradient></defs>
+      <path d="M32 5 L39.5 22.5 L58 24.5 L44 37 L48 55.5 L32 46 L16 55.5 L20 37 L6 24.5 L24.5 22.5 Z" fill="url(#pipG)" stroke="#ffd98f" stroke-width="3" stroke-linejoin="round"/>
+      <ellipse cx="22.5" cy="36" rx="3.6" ry="2.2" fill="#ff8a8a" opacity=".6"/>
+      <ellipse cx="41.5" cy="36" rx="3.6" ry="2.2" fill="#ff8a8a" opacity=".6"/>
+      <g id="pipFace"></g>
+    </svg>
+  </button>
+  <div class="bubble" id="pipSay"></div>
+</div>
 
 <script>
 /* ─────────────  EDIT ME  ───────────── */
@@ -575,6 +609,99 @@ $("copy").onclick = () => {
     .catch(() => $("toast").textContent = "couldn't copy. a screenshot works too!");
 };
 $("replay").onclick = () => location.reload();
+
+/* ── Pip, the tiny star ── */
+const FACES = {
+  smile: `<g class="eyes"><ellipse cx="26" cy="30" rx="2.4" ry="3.2" fill="#3b1a05"/><ellipse cx="38" cy="30" rx="2.4" ry="3.2" fill="#3b1a05"/>
+          <circle cx="26.8" cy="28.8" r=".9" fill="#fff"/><circle cx="38.8" cy="28.8" r=".9" fill="#fff"/></g>
+          <path d="M28.5 36 Q32 39.5 35.5 36" fill="none" stroke="#3b1a05" stroke-width="2" stroke-linecap="round"/>`,
+  happy: `<g class="eyes"><path d="M23.5 31 Q26 27 28.5 31" fill="none" stroke="#3b1a05" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M35.5 31 Q38 27 40.5 31" fill="none" stroke="#3b1a05" stroke-width="2.2" stroke-linecap="round"/></g>
+          <path d="M27.5 35 Q32 42 36.5 35 Z" fill="#3b1a05"/><path d="M29.5 38 Q32 40 34.5 38" fill="#ff7a7a"/>`,
+  sad:   `<g class="eyes"><ellipse cx="26" cy="31" rx="2.2" ry="2.8" fill="#3b1a05"/><ellipse cx="38" cy="31" rx="2.2" ry="2.8" fill="#3b1a05"/>
+          <path d="M22.5 26.5 L28 28" stroke="#3b1a05" stroke-width="1.6" stroke-linecap="round"/><path d="M41.5 26.5 L36 28" stroke="#3b1a05" stroke-width="1.6" stroke-linecap="round"/></g>
+          <path d="M28.5 39 Q32 35.5 35.5 39" fill="none" stroke="#3b1a05" stroke-width="2" stroke-linecap="round"/>
+          <path d="M40 34 q1.6 3 0 4.4 q-1.6 -1.4 0 -4.4" fill="#8fd3ff"/>`,
+  wow:   `<g class="eyes"><circle cx="26" cy="30" r="3" fill="#3b1a05"/><circle cx="38" cy="30" r="3" fill="#3b1a05"/>
+          <circle cx="27" cy="29" r="1" fill="#fff"/><circle cx="39" cy="29" r="1" fill="#fff"/></g>
+          <ellipse cx="32" cy="38" rx="2.4" ry="3" fill="#3b1a05"/>`,
+  sleepy:`<g class="eyes"><path d="M23.5 30 Q26 32 28.5 30" fill="none" stroke="#3b1a05" stroke-width="2" stroke-linecap="round"/>
+          <path d="M35.5 30 Q38 32 40.5 30" fill="none" stroke="#3b1a05" stroke-width="2" stroke-linecap="round"/></g>
+          <path d="M29 37 Q32 39 35 37" fill="none" stroke="#3b1a05" stroke-width="2" stroke-linecap="round"/>`,
+};
+const pip = $("pip"), pipBody = $("pipBody"), pipSay = $("pipSay");
+let sayTimer, pipScale = 1;
+function face(f){ $("pipFace").innerHTML = FACES[f] || FACES.smile; }
+function say(text, f = "smile", ms = 4200){
+  face(f); pipSay.textContent = text; pipSay.classList.add("on");
+  clearTimeout(sayTimer); sayTimer = setTimeout(() => { pipSay.classList.remove("on"); face("smile"); }, ms);
+}
+function hop(kind = "wiggle"){ pipBody.classList.remove("wiggle","spin"); void pipBody.offsetWidth; pipBody.classList.add(kind);
+  setTimeout(() => pipBody.classList.remove(kind), 1000); }
+face("smile");
+setInterval(() => { pip.classList.add("blink"); setTimeout(() => pip.classList.remove("blink"), 140); }, 3800);
+
+const POKES = ["hehe, that tickles", "hi hi hi ✦", "I'm Pip. he made me just for you", "I'm small but I'm very bright",
+               "psst… he's been nervous about this all week", "I'm the brightest star here (don't tell the others)", "boop!"];
+let pokeIdx = 0;
+pipBody.onclick = () => { hop("wiggle"); chime(8); say(POKES[pokeIdx++ % POKES.length], pokeIdx % 3 ? "happy" : "wow"); };
+
+const SCENE_LINES = {
+  intro:     ["hi! I'm Pip ✦ I'll keep you company", "happy"],
+  ask:       ["no pressure… (press yes)", "smile"],
+  orbit:     ["ooh, pick a planet! tap one", "wow"],
+  night:     ["weekends are my favourite, just saying", "smile"],
+  passScene: ["I'll keep your answer safe. goodnight ✦", "sleepy"],
+};
+const _go = go;
+go = id => { _go(id); const l = SCENE_LINES[id]; if(l) setTimeout(() => say(l[0], l[1], 5000), id === "intro" ? 3400 : 900); };
+setTimeout(() => say(...SCENE_LINES.intro, 5000), 3400);
+
+const NO_REACT = ["…oh", "ouch. that one hurt", "I'm literally shrinking", "please don't make me disappear", "I'm so small now", "…"];
+$("no").addEventListener("click", () => {
+  pipScale = Math.max(.45, pipScale - .1); pipBody.style.transform = `scale(${pipScale})`;
+  say(NO_REACT[Math.min(state.noCount - 1, NO_REACT.length - 1)], "sad", 3000);
+});
+$("yes").addEventListener("click", () => {
+  pipScale = 1.25; pipBody.style.transform = `scale(1.25)`; hop("spin");
+  say("YAYYY!! I knew it ✦✦✦", "happy", 3500);
+  setTimeout(() => { pipScale = 1; pipBody.style.transform = ""; }, 3000);
+});
+const PLAN_REACT = {
+  Coffee:"a coffee date! so cozy", Lunch:"lunch dates are underrated", Dessert:"dessert first, always",
+  Dinner:"fancy!! wear something nice", Movie:"sit in the middle seats", Bowling:"I'm rooting for you. he's bad at bowling",
+  Arcade:"win him a tiny toy", "Long drive":"windows down, song up", "Street food":"try everything twice",
+  Stargazing:"wait… you're coming to see me??", "Your idea ✎":"ooh, a secret plan. tell me!",
+};
+$("system").addEventListener("click", e => {
+  const b = e.target.closest(".planet"); if(!b) return;
+  const k = b.querySelector(".nm").textContent;
+  hop("wiggle"); say(PLAN_REACT[k] || "great pick!", k === "Stargazing" ? "wow" : "happy");
+});
+$("calGrid").addEventListener("click", e => {
+  const b = e.target.closest(".cal-day"); if(!b || b.disabled) return;
+  const d = picked, wd = d.getDay(), diff = Math.round((d - today) / 864e5);
+  say(diff <= 2 ? "so soon!! he'll be thrilled" : wd === 5 ? "a Friday! perfect" : wd === 0 || wd === 6 ? "a weekend date ✦" : diff > 21 ? "that's far… he'll count the days" : "noted ✦", "happy", 3000);
+});
+$("times").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if(!b) return;
+  const t = { "Morning":"early bird!", "Lunchtime":"hungry hours", "Golden hour":"the prettiest light", "After dark":"that's when I shine", "Midnight walk":"ooh, I'll be watching ✦" }[b.dataset.v];
+  say(t || "perfect", b.dataset.v === "After dark" || b.dataset.v === "Midnight walk" ? "wow" : "happy", 3000);
+});
+
+/* tap anywhere on the sky → tiny stars pop */
+document.addEventListener("pointerdown", e => {
+  if(e.target.closest("button, a, input, .cal, .pass")) return;
+  for(let i=0;i<5;i++){
+    const st = document.createElement("span"); st.className = "tap-star"; st.textContent = "✦";
+    const a = Math.random()*6.283, r = 24 + Math.random()*30;
+    st.style.left = e.clientX + "px"; st.style.top = e.clientY + "px";
+    st.style.setProperty("--dx", Math.cos(a)*r + "px"); st.style.setProperty("--dy", Math.sin(a)*r + "px");
+    st.style.fontSize = (9 + Math.random()*9) + "px";
+    document.body.appendChild(st); setTimeout(() => st.remove(), 1000);
+  }
+  chime(Math.floor(Math.random()*10), 1.2);
+});
 </script>
 </body>
 </html>
