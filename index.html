@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Small Sky</title>
+<meta name="description" content="Someone built you a small sky.">
+<meta property="og:title" content="Someone built you a small sky ✦">
+<meta property="og:description" content="Open it at night. Tap slowly.">
+<meta name="theme-color" content="#04060d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-screen night sky canvas; each chapter is a centered scene that fades/blurs in over it. One look only: night. */
+:root{
+  --night:#04060d;
+  --night-2:#0c1a24;
+  --star:#fbf3e6;
+  --dim:#9fb0bf;
+  --glow:#ffa24c;
+  --gold:#ffc97a;
+  --f-display:"Instrument Serif", "Times New Roman", serif;
+  --f-body:"Manrope", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:radial-gradient(90% 60% at 15% 105%, rgba(255,140,50,.55) 0%, rgba(214,90,40,.22) 35%, transparent 65%),radial-gradient(70% 50% at 90% 0%, rgba(40,150,160,.28) 0%, transparent 60%),radial-gradient(40% 30% at 70% 80%, rgba(255,120,150,.12) 0%, transparent 70%),linear-gradient(to top, var(--night-2), var(--night));background-attachment:fixed;
+  background-color:var(--night);
+  color:var(--star);font-family:var(--f-body);overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+canvas#sky{position:fixed;inset:0;width:100%;height:100%;display:block}
+#gloom{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity 1s ease}
+
+.scene{
+  position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:22px;text-align:center;
+  padding:calc(24px + env(safe-area-inset-top,0px)) 20px calc(24px + env(safe-area-inset-bottom,0px));
+  opacity:0;visibility:hidden;filter:blur(12px);transform:scale(1.03);
+  transition:opacity .9s ease, filter .9s ease, transform .9s ease, visibility 0s linear .9s;
+}
+.scene.on{opacity:1;visibility:visible;filter:none;transform:none;transition:opacity .9s ease, filter .9s ease, transform .9s ease}
+
+.label{font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.label b{color:var(--gold);font-weight:500}
+h1,h2{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance;line-height:1.02}
+h1{font-size:clamp(44px,11vw,104px);letter-spacing:-.01em}
+h2{font-size:clamp(34px,7.5vw,64px)}
+h1 em,h2 em{color:var(--glow);font-style:italic}
+p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
+
+.btn{
+  font:inherit;font-weight:700;font-size:15px;cursor:pointer;border-radius:999px;padding:14px 28px;
+  border:1px solid rgba(246,241,231,.25);background:rgba(246,241,231,.06);color:var(--star);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:transform .2s ease, background .2s ease, border-color .2s ease, opacity .3s;
+}
+.btn:hover{background:rgba(246,241,231,.12);border-color:rgba(246,241,231,.5)}
+.btn:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.btn.primary{background:var(--star);color:#3b1a05;border-color:var(--star);box-shadow:0 0 40px -6px rgba(255,160,70,.8)}
+.btn.primary:hover{background:#fff}
+.btn:disabled{opacity:.25;pointer-events:none}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center}
+
+/* typewriter */
+.type .w{white-space:nowrap;display:inline}
+.type .w > span{opacity:0;transition:opacity .08s}
+.type .w > span.v{opacity:1}
+#hello2{max-width:30ch;text-wrap:balance;font-size:clamp(17px,2.4vw,20px);line-height:1.5}
+
+/* 02 ask */
+.ask .row{min-height:64px}
+#yes{transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
+#no.melt{animation:melt 1.6s ease-in forwards;pointer-events:none}
+@keyframes melt{
+  0%{transform:none}
+  20%{transform:rotate(-8deg) skewX(8deg)}
+  100%{transform:translateY(80vh) rotate(70deg) scaleY(.4);opacity:0}
+}
+.caption{font-family:var(--f-display);font-style:italic;font-size:22px;color:var(--gold);min-height:1.3em}
+
+/* 03 orbit */
+.system{position:relative;width:min(88vw,460px);aspect-ratio:1;max-width:100%}
+.ring{position:absolute;border-radius:50%;border:1px dashed rgba(246,241,231,.14);left:50%;top:50%;transform:translate(-50%,-50%)}
+.sun{
+  position:absolute;left:50%;top:50%;width:18%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #fff7e0, #ffc15e 40%, #e8621d 100%);
+  box-shadow:0 0 70px 14px rgba(255,150,50,.5);display:grid;place-items:center;
+  font-family:var(--f-display);font-style:italic;color:#3b1a05;font-size:clamp(15px,3.6vw,20px);
+}
+.arm{position:absolute;inset:0;animation:spin var(--d) linear infinite;animation-delay:var(--delay);pointer-events:none}
+.ppos{position:absolute;left:calc(50% + var(--r));top:50%;transform:translate(-50%,-50%);pointer-events:auto}
+.planet{
+  display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;cursor:pointer;color:var(--star);padding:4px;
+  animation:spin var(--d) linear infinite reverse;animation-delay:var(--delay);font:inherit;
+}
+.planet .ball{
+  width:var(--s);aspect-ratio:1;border-radius:50%;background:var(--bg);
+  box-shadow:inset -6px -6px 14px rgba(0,0,0,.45), 0 0 22px -4px var(--halo);transition:transform .3s;
+}
+.planet .nm{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;
+  background:rgba(4,6,13,.6);padding:3px 7px;border-radius:6px;color:var(--dim);transition:color .3s}
+.planet:hover .ball,.planet[aria-pressed="true"] .ball{transform:scale(1.25)}
+.planet[aria-pressed="true"] .nm{color:#3b1a05;background:var(--gold)}
+.planet:focus-visible{outline:1px dashed var(--gold);border-radius:12px}
+.system.paused .arm,.system.paused .planet{animation-play-state:paused}
+@keyframes spin{to{transform:rotate(360deg)}}
+.picked{font-family:var(--f-display);font-style:italic;font-size:26px;color:var(--gold);min-height:1.2em}
+
+/* 04 moons */
+.moons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:640px}
+.moon{
+  width:78px;background:rgba(246,241,231,.04);border:1px solid rgba(246,241,231,.12);border-radius:16px;
+  padding:12px 6px 10px;cursor:pointer;color:var(--star);font:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;
+  transition:border-color .2s, background .2s, transform .2s;
+}
+.moon svg{width:40px;height:40px}
+.moon .d{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em}
+.moon .ph{font-size:10px;color:var(--dim);line-height:1.2;min-height:2.4em}
+.moon:hover{transform:translateY(-3px);border-color:rgba(246,241,231,.35)}
+.moon[aria-pressed="true"]{border-color:var(--gold);background:rgba(255,190,100,.12)}
+.moon:focus-visible,.chip:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.chip{
+  font:inherit;font-size:14px;cursor:pointer;border-radius:999px;padding:10px 16px;background:transparent;color:var(--star);
+  border:1px solid rgba(246,241,231,.2);display:flex;flex-direction:column;align-items:center;gap:1px;
+}
+.chip small{font-family:var(--f-mono);font-size:10px;color:var(--dim)}
+.chip[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#3b1a05}
+.chip[aria-pressed="true"] small{color:#6b3a10}
+.scroll{overflow-y:auto;justify-content:flex-start}
+.scroll > :first-child{margin-top:auto}.scroll > :last-child{margin-bottom:auto}
+
+/* 05 boarding pass */
+.pass{
+  width:min(92vw,560px);max-width:100%;color:#1c1a1f;background:linear-gradient(135deg,#fbf3e6,#f3dfc2);border-radius:20px;display:grid;
+  grid-template-columns:minmax(0,1fr) 120px;text-align:left;position:relative;
+  box-shadow:0 30px 90px -20px rgba(255,150,60,.45);
+  animation:land 1.2s cubic-bezier(.2,.9,.3,1.1) both;
+}
+@keyframes land{from{transform:translateY(40px) rotate(-4deg);opacity:0}}
+.pass .main{padding:22px 22px 18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.pass .side{border-left:2px dashed rgba(28,26,31,.25);padding:22px 14px;display:flex;flex-direction:column;gap:10px;justify-content:space-between;position:relative}
+.pass .side::before,.pass .side::after{content:"";position:absolute;left:-12px;width:22px;height:22px;border-radius:50%;background:#0a1219}
+.pass .side::before{top:-11px}.pass .side::after{bottom:-11px}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.top .al{font-family:var(--f-display);font-style:italic;font-size:22px}
+.k{font-family:var(--f-mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#8a6a45}
+.v{font-family:var(--f-display);font-size:22px;line-height:1.1;overflow-wrap:anywhere}
+.route{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.route .v{font-size:30px}
+.route .plane{font-size:18px;color:#d9651c}
+.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.note-line{font-family:var(--f-display);font-style:italic;font-size:16px;color:#8a6a45;overflow-wrap:anywhere}
+.barcode{height:56px;display:flex;align-items:stretch;gap:2px}
+.barcode i{background:#1c1a1f;display:block}
+@media (max-width:520px){
+  .pass{grid-template-columns:1fr}
+  .pass .side{border-left:0;border-top:2px dashed rgba(28,26,31,.25);flex-direction:row;align-items:center}
+  .pass .side::before{top:-12px;left:-11px}.pass .side::after{top:-12px;bottom:auto;left:auto;right:-11px}
+  .fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .barcode{flex:1;height:40px}
+}
+.toast{font-family:var(--f-mono);font-size:12px;color:var(--gold);min-height:1.2em}
+
+#skip{position:fixed;right:16px;bottom:calc(14px + env(safe-area-inset-bottom,0px));font-family:var(--f-mono);font-size:10px;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--dim);opacity:.5;background:none;border:0;cursor:pointer;z-index:3}
+#sound{position:fixed;left:16px;bottom:calc(14px + env(safe-area-inset-bottom,0px));font-family:var(--f-mono);font-size:10px;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--dim);background:none;border:0;cursor:pointer;z-index:3}
+@media (prefers-reduced-motion:reduce){
+  .scene{transition:opacity .3s, visibility 0s linear .3s;filter:none;transform:none}
+  .arm,.planet{animation:none!important}
+}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div id="gloom" aria-hidden="true"></div>
+
+<!-- 00 intro -->
+<section class="scene on" id="intro" aria-live="polite">
+  <div class="label" id="stamp">Transmission</div>
+  <h1 class="type" id="hello"></h1>
+  <p class="type" id="hello2"></p>
+  <button class="btn primary" id="lookUp" style="opacity:0">Look up ✦</button>
+</section>
+
+
+<!-- 02 the question -->
+<section class="scene ask" id="ask">
+  <div class="label">Step <b>01</b> / 03 · The question</div>
+  <h1 id="askH">Will you go on a <em>date</em> with me?</h1>
+  <div class="row">
+    <button class="btn primary" id="yes">Yes ✦</button>
+    <button class="btn" id="no">No</button>
+  </div>
+  <div class="caption" id="noCap"></div>
+</section>
+
+<!-- 03 orbit -->
+<section class="scene" id="orbit">
+  <div class="label">Step <b>02</b> / 03 · Pick a planet</div>
+  <h2>Where are <em>we</em> going?</h2>
+  <div class="system" id="system">
+    <div class="ring" style="width:56%;height:56%"></div>
+    <div class="ring" style="width:88%;height:88%"></div>
+    <div class="sun">us</div>
+  </div>
+  <div class="picked" id="picked"></div>
+  <button class="btn primary" id="toNight" disabled>This one →</button>
+</section>
+
+<!-- 04 night -->
+<section class="scene scroll" id="night">
+  <div class="label">Step <b>03</b> / 03 · Pick a night</div>
+  <h2>The moon's <em>calendar</em>, not mine.</h2>
+  <div class="moons" id="moons"></div>
+  <div class="row" id="times">
+    <button class="chip" aria-pressed="false" data-v="Lazy afternoon" data-t="1 – 4 pm">Lazy afternoon<small>1 – 4 pm</small></button>
+    <button class="chip" aria-pressed="false" data-v="Golden hour" data-t="5 – 7 pm">Golden hour<small>5 – 7 pm</small></button>
+    <button class="chip" aria-pressed="false" data-v="After dark" data-t="7 – 10 pm">After dark<small>7 – 10 pm</small></button>
+    <button class="chip" aria-pressed="false" data-v="Midnight walk" data-t="10 pm +">Midnight walk<small>10 pm +</small></button>
+  </div>
+  <button class="btn primary" id="toPass" disabled>Print my ticket →</button>
+</section>
+
+<!-- 05 boarding pass -->
+<section class="scene scroll" id="passScene">
+  <div class="label">Confirmed · <b>see you soon</b></div>
+  <div class="pass" id="pass">
+    <div class="main">
+      <div class="top"><span class="al">Small Sky Airways</span><span class="k" id="flight">Flight LV 143</span></div>
+      <div class="route">
+        <div><div class="k">From</div><div class="v">Texting</div></div>
+        <div class="plane">✦ ─ ✈</div>
+        <div style="text-align:right"><div class="k">To</div><div class="v">Us</div></div>
+      </div>
+      <div class="fields">
+        <div><div class="k">Passenger</div><div class="v" id="pName"></div></div>
+        <div><div class="k">Escort</div><div class="v" id="pHim"></div></div>
+        <div><div class="k">Seat</div><div class="v">Next to me</div></div>
+        <div><div class="k">Destination</div><div class="v" id="pPlan"></div></div>
+        <div><div class="k">Night</div><div class="v" id="pDay"></div></div>
+        <div><div class="k">Boarding</div><div class="v" id="pTime"></div></div>
+      </div>
+      <div class="note-line" id="pMoon"></div>
+    </div>
+    <div class="side">
+      <div><div class="k">Gate</div><div class="v">♡</div></div>
+      <div class="barcode" id="barcode" aria-hidden="true"></div>
+      <div class="k">Non-refundable</div>
+    </div>
+  </div>
+  <div class="row">
+    <a class="btn primary" id="wa" target="_blank" rel="noopener" hidden>Send it to him ✦</a>
+    <button class="btn" id="copy" hidden>Copy ticket</button>
+  </div>
+  <div class="toast" id="toast" aria-live="polite"></div>
+  <button class="btn" id="replay" style="font-size:12px;padding:8px 16px;opacity:.6">Replay the sky</button>
+</section>
+
+<button id="sound" aria-pressed="false">♪ Sound off</button>
+<button id="skip" hidden>skip →</button>
+
+<script>
+/* ─────────────  EDIT ME  ───────────── */
+const CONFIG = {
+  her: "",            // her name, e.g. "Ananya". Or use the link: yoursite.vercel.app/?to=Ananya
+  him: "Sid",         // your name
+  whatsapp: "",       // your number with country code, digits only, e.g. "919876543210"
+};
+/* ───────────────────────────────────── */
+
+const q = new URLSearchParams(location.search);
+const HER = (q.get("to") || CONFIG.her || "").trim();
+const HIM = (q.get("from") || CONFIG.him || "me").trim();
+const $ = id => document.getElementById(id);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const state = { plan:null, day:null, moon:null, time:null, noCount:0 };
+
+/* ── sky ── */
+const cv = $("sky"), cx = cv.getContext("2d");
+let W, H, DPR, stars = [], shooters = [], sparks = [], mx = 0, my = 0, warm = 0;
+function resize(){
+  DPR = Math.min(devicePixelRatio || 1, 2);
+  W = cv.width = innerWidth * DPR; H = cv.height = innerHeight * DPR;
+  const n = Math.round(innerWidth * innerHeight / 3200);
+  stars = Array.from({length:n}, () => ({
+    x:Math.random()*W, y:Math.random()*H, r:(Math.random()**3*1.6+.3)*DPR,
+    z:Math.random(), t:Math.random()*6.28, s:.5+Math.random()*1.5
+  }));
+}
+addEventListener("resize", resize); resize();
+addEventListener("pointermove", e => { mx = e.clientX/innerWidth - .5; my = e.clientY/innerHeight - .5; });
+
+function shoot(){ if(reduce) return;
+  shooters.push({x:Math.random()*W*.8, y:Math.random()*H*.4, vx:(6+Math.random()*6)*DPR, vy:(2+Math.random()*3)*DPR, life:1});
+}
+function burst(x, y, n=140, hue){
+  if(reduce) n = 20;
+  for(let i=0;i<n;i++){
+    const a = Math.random()*6.283, v = (Math.random()*7+1)*DPR;
+    sparks.push({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, life:1, c: hue || (Math.random()<.5 ? "255,170,80" : "255,236,200")});
+  }
+}
+let last = 0;
+function frame(t){
+  const dt = Math.min((t - last)/16.7, 3); last = t;
+  cx.clearRect(0,0,W,H);
+  for(const s of stars){
+    s.t += .02*s.s*dt;
+    const a = .45 + Math.sin(s.t)*.35;
+    const px = s.x + mx*40*s.z*DPR, py = s.y + my*40*s.z*DPR;
+    cx.globalAlpha = Math.max(0, a);
+    cx.fillStyle = warm > 0 && s.z > .8 ? `rgb(255,${200 - warm*40},${210 - warm*20})` : "#f6f1e7";
+    cx.beginPath(); cx.arc(px, py, s.r, 0, 6.283); cx.fill();
+  }
+  cx.globalAlpha = 1;
+  shooters = shooters.filter(s => s.life > 0);
+  for(const s of shooters){
+    const g = cx.createLinearGradient(s.x, s.y, s.x - s.vx*14, s.y - s.vy*14);
+    g.addColorStop(0, `rgba(255,255,255,${s.life})`); g.addColorStop(1, "rgba(255,255,255,0)");
+    cx.strokeStyle = g; cx.lineWidth = 1.6*DPR;
+    cx.beginPath(); cx.moveTo(s.x, s.y); cx.lineTo(s.x - s.vx*14, s.y - s.vy*14); cx.stroke();
+    s.x += s.vx*dt; s.y += s.vy*dt; s.life -= .012*dt;
+  }
+  sparks = sparks.filter(p => p.life > 0);
+  for(const p of sparks){
+    cx.fillStyle = `rgba(${p.c},${p.life})`;
+    cx.beginPath(); cx.arc(p.x, p.y, 2*DPR*p.life + .5, 0, 6.283); cx.fill();
+    p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= .97; p.vy = p.vy*.97 + .06*DPR*dt; p.life -= .011*dt;
+  }
+  if(Math.random() < .004*dt) shoot();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ── optional soft sound (WebAudio, no files) ── */
+let actx = null, soundOn = false;
+$("sound").onclick = () => {
+  soundOn = !soundOn;
+  if(soundOn && !actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  $("sound").textContent = soundOn ? "♪ Sound on" : "♪ Sound off";
+  $("sound").setAttribute("aria-pressed", soundOn);
+  if(soundOn) chime(0);
+};
+const SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.5, 1567.98, 1760];
+function chime(i, len=1.6){
+  if(!soundOn || !actx) return;
+  const o = actx.createOscillator(), g = actx.createGain(), now = actx.currentTime;
+  o.type = "sine"; o.frequency.value = SCALE[i % SCALE.length];
+  g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(.12, now+.02); g.gain.exponentialRampToValueAtTime(.0001, now+len);
+  o.connect(g).connect(actx.destination); o.start(now); o.stop(now+len);
+}
+
+/* ── scenes ── */
+function go(id){
+  document.querySelectorAll(".scene").forEach(s => s.classList.toggle("on", s.id === id));
+  $("skip").hidden = id !== "intro";
+}
+
+/* ── 00 intro: typewriter ── */
+function typeInto(el, text, speed=45){
+  // words stay whole and wrap at spaces, so the line breaks and centres cleanly
+  el.innerHTML = text.split(" ").map(w => `<span class="w">${[...w].map(c => `<span>${c}</span>`).join("")}</span>`).join(" ");
+  const spans = [...el.querySelectorAll(".w > span")];
+  return new Promise(res => {
+    if(reduce){ spans.forEach(s => s.classList.add("v")); return res(); }
+    let i = 0; const tick = () => { if(i < spans.length){ spans[i++].classList.add("v"); setTimeout(tick, speed); } else res(); };
+    tick();
+  });
+}
+const now = new Date();
+$("stamp").innerHTML = `Transmission · <b>${now.toLocaleDateString("en-GB").replaceAll("/", ".")}</b> · ${now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}`;
+(async () => {
+  await new Promise(r => setTimeout(r, 700));
+  await typeInto($("hello"), HER ? `Hey ${HER},` : "Hey you,", 70);
+  await typeInto($("hello2"), "I couldn't give you the whole sky, so I built you a small one.", 32);
+  $("lookUp").style.opacity = 1;
+})();
+$("lookUp").onclick = $("skip").onclick = () => { go("ask"); shoot(); };
+
+/* ── 02 the question ── */
+const NO_LINES = ["No", "Are you sure?", "Like… sure sure?", "The stars are watching", "You're dimming the sky", "Okay the sky is sad now", "…"];
+const CAPTIONS = ["", "hmm.", "one star just went out.", "they're whispering about it.", "it's getting really dark.", "please, it's cold up here.", "fine. the No button quits."];
+$("no").onclick = () => {
+  state.noCount++;
+  const n = state.noCount;
+  $("gloom").style.opacity = Math.min(n*0.12, .7);
+  $("yes").style.transform = `scale(${1 + n*0.14})`;
+  $("noCap").textContent = CAPTIONS[Math.min(n, CAPTIONS.length-1)];
+  // knock out a handful of stars each time
+  for(let k=0;k<stars.length*0.12;k++) stars.splice(Math.floor(Math.random()*stars.length), 1);
+  if(n >= NO_LINES.length - 1){
+    $("no").textContent = NO_LINES.at(-1);
+    $("no").classList.add("melt");
+    setTimeout(() => $("no").remove(), 1600);
+  } else {
+    $("no").textContent = NO_LINES[n];
+  }
+};
+$("yes").onclick = () => {
+  save("yes");
+  $("gloom").style.opacity = 0;
+  resize();                                   // every star comes back
+  const r = $("yes").getBoundingClientRect();
+  burst((r.left + r.width/2)*DPR, (r.top + r.height/2)*DPR, 260);
+  for(let i=0;i<6;i++) setTimeout(shoot, i*150);
+  [0,2,4,5,7,9].forEach((n,k) => setTimeout(() => chime(n, 2.6), k*110));
+  $("askH").innerHTML = "She said <em>yes.</em>";
+  $("yes").style.transform = "scale(1)";
+  $("noCap").textContent = "the whole sky heard that.";
+  document.querySelectorAll("#ask .btn").forEach(b => b.disabled = true);
+  setTimeout(() => go("orbit"), 2600);
+};
+
+/* ── 03 orbit ── */
+const PLANETS = [
+  { n:"Coffee & a long talk",   short:"Coffee",      r:"28%", s:"30px", d:"32s", delay:"-4s",  bg:"radial-gradient(circle at 35% 30%, #f3d9b1, #8a5a3c)", halo:"#f3d9b1" },
+  { n:"Dinner somewhere pretty",short:"Dinner",      r:"28%", s:"36px", d:"32s", delay:"-20s", bg:"radial-gradient(circle at 35% 30%, #ffc0d4, #b3325f)", halo:"#ff8fb3" },
+  { n:"Movie + shared popcorn", short:"Movie",       r:"44%", s:"34px", d:"54s", delay:"-2s",  bg:"radial-gradient(circle at 35% 30%, #cbc6ff, #4a3fb0)", halo:"#a49cff" },
+  { n:"Long drive, loud music", short:"Long drive",  r:"44%", s:"40px", d:"54s", delay:"-15s", bg:"radial-gradient(circle at 35% 30%, #a6f0e0, #1f7a73)", halo:"#7fe3cf" },
+  { n:"Street food adventure",  short:"Street food", r:"44%", s:"32px", d:"54s", delay:"-29s", bg:"radial-gradient(circle at 35% 30%, #ffe19a, #d4642a)", halo:"#ffd58c" },
+  { n:"Stargazing, obviously",  short:"Stargazing",  r:"44%", s:"28px", d:"54s", delay:"-42s", bg:"radial-gradient(circle at 35% 30%, #ffffff, #7a86b8)", halo:"#ffffff" },
+];
+const sys = $("system");
+PLANETS.forEach(p => {
+  const arm = document.createElement("div"); arm.className = "arm";
+  arm.style.cssText = `--d:${p.d};--delay:${p.delay};--r:${p.r}`;
+  arm.innerHTML = `<div class="ppos"><button class="planet" aria-pressed="false" style="--d:${p.d};--delay:${p.delay};--s:${p.s};--bg:${p.bg};--halo:${p.halo}">
+    <span class="ball"></span><span class="nm">${p.short}</span></button></div>`;
+  const btn = arm.querySelector(".planet");
+  btn.onclick = () => {
+    sys.querySelectorAll(".planet").forEach(x => x.setAttribute("aria-pressed", "false"));
+    btn.setAttribute("aria-pressed", "true");
+    sys.classList.add("paused");
+    state.plan = p.n;
+    $("picked").textContent = p.n;
+    $("toNight").disabled = false;
+    chime(Math.floor(Math.random()*10));
+  };
+  sys.appendChild(arm);
+});
+$("toNight").onclick = () => go("night");
+
+/* ── 04 moons: real phases for the next 7 nights ── */
+const SYNODIC = 29.530588853, REF_NEW = Date.UTC(2000, 0, 6, 18, 14);
+function phaseOf(d){ const days = (d - REF_NEW)/864e5; return ((days % SYNODIC) + SYNODIC) % SYNODIC / SYNODIC; }
+function phaseName(p){
+  const names = ["New moon","Waxing crescent","First quarter","Waxing gibbous","Full moon","Waning gibbous","Last quarter","Waning crescent"];
+  return names[Math.round(p*8) % 8];
+}
+function moonSVG(p){
+  const r = 18, c = 20, k = Math.cos(p*2*Math.PI), rx = Math.abs(k)*r;
+  const waxing = p < .5;
+  const outer = waxing ? 1 : 0;                         // lit limb: right when waxing, left when waning
+  const crescent = k > 0;                               // less than half lit
+  let term = waxing ? (crescent ? 0 : 1) : (crescent ? 1 : 0);
+  const d = `M${c} ${c-r} A${r} ${r} 0 0 ${outer} ${c} ${c+r} A${rx} ${r} 0 0 ${term} ${c} ${c-r} Z`;
+  return `<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#16242e"/>
+    <path d="${d}" fill="#f6f1e7"/><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(246,241,231,.25)"/></svg>`;
+}
+const moons = $("moons");
+const dayFmt = new Intl.DateTimeFormat("en-IN", {weekday:"short", day:"numeric", month:"short"});
+for(let i=1;i<=7;i++){
+  const d = new Date(); d.setDate(d.getDate() + i); d.setHours(21, 0, 0, 0);
+  const p = phaseOf(d), name = phaseName(p), label = dayFmt.format(d);
+  const b = document.createElement("button");
+  b.className = "moon"; b.setAttribute("aria-pressed", "false");
+  b.setAttribute("aria-label", `${label}, ${name}`);
+  b.innerHTML = `${moonSVG(p)}<span class="d">${i === 1 ? "Tmrw" : d.toLocaleDateString("en-IN", {weekday:"short"})} ${d.getDate()}</span><span class="ph">${name}</span>`;
+  b.onclick = () => {
+    moons.querySelectorAll(".moon").forEach(x => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true");
+    state.day = label; state.moon = name; chime(i+1); checkNight();
+  };
+  moons.appendChild(b);
+}
+$("times").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if(!b) return;
+  $("times").querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", "false"));
+  b.setAttribute("aria-pressed", "true");
+  state.time = `${b.dataset.v} (${b.dataset.t})`; chime(5); checkNight();
+});
+function checkNight(){ $("toPass").disabled = !(state.day && state.time); }
+
+/* ── saving answers (Vercel function → Redis) ── */
+const SESSION = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+function save(stage){
+  const body = { session: SESSION, stage, her: HER || null, plan: state.plan, night: state.day, moon: state.moon,
+                 time: state.time, noCount: state.noCount, tz: Intl.DateTimeFormat().resolvedOptions().timeZone };
+  return fetch("/api/answer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true })
+    .then(r => r.ok).catch(() => false);
+}
+
+/* ── 05 boarding pass ── */
+function ticketText(){
+  return `✦ SMALL SKY AIRWAYS ✦\nYES. It's a date.\n\nPassenger: ${HER || "Me"}\nDestination: ${state.plan}\nNight: ${state.day} (${state.moon.toLowerCase()})\nBoarding: ${state.time}\nSeat: next to you`;
+}
+$("toPass").onclick = () => {
+  $("pName").textContent = HER || "You";
+  $("pHim").textContent = HIM;
+  $("pPlan").textContent = state.plan;
+  $("pDay").textContent = state.day.replace(/^\w+,?\s*/, "");
+  $("pTime").textContent = state.time.split(" (")[0];
+  $("pMoon").textContent = `Under a ${state.moon.toLowerCase()}. Dress for the weather, the rest is on me.`;
+  // barcode seeded from the answers
+  let seed = [...(state.plan + state.day + state.time)].reduce((a,c) => (a*31 + c.charCodeAt(0)) >>> 0, 7);
+  const bc = $("barcode"); bc.innerHTML = "";
+  for(let i=0;i<34;i++){ seed = (seed*1103515245 + 12345) >>> 0; const w = 1 + (seed >> 16) % 3; const i2 = document.createElement("i"); i2.style.width = w + "px"; bc.appendChild(i2); }
+  const msg = encodeURIComponent(ticketText());
+  const num = (CONFIG.whatsapp || "").replace(/\D/g, "");
+  $("wa").href = num ? `https://wa.me/${num}?text=${msg}` : `https://wa.me/?text=${msg}`;
+  go("passScene");
+  $("toast").textContent = "sending your ticket up to his sky…";
+  save("ticket").then(ok => {
+    if(ok){ $("toast").textContent = "delivered ✦ he already has it. nothing else to do."; }
+    else { $("toast").textContent = "couldn't reach the sky, send it this way instead:"; $("wa").hidden = false; $("copy").hidden = false; }
+  });
+  setTimeout(() => { burst(W/2, H*.35, 220); for(let i=0;i<4;i++) setTimeout(shoot, i*200); [9,7,5,4,2,0].forEach((n,k) => setTimeout(() => chime(n, 2.2), k*120)); }, 500);
+};
+$("copy").onclick = () => {
+  const t = ticketText();
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+    .then(() => $("toast").textContent = "copied. now paste it to him ✦")
+    .catch(() => $("toast").textContent = "couldn't copy. a screenshot works too!");
+};
+$("replay").onclick = () => location.reload();
+</script>
+</body>
+</html>
