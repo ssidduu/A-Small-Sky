@@ -2,7 +2,7 @@
 
 A deep-space site to ask someone out. She's asked the question (the "No" button dims the sky and
 eventually melts), picks a planet (the plan), picks a night by the real moon phase, and gets a
-boarding pass. Her answers save automatically, and you read them on a private page.
+moonlit "It's a date" note. Her answers save automatically, and you read them on a private page.
 
 ```
 index.html       the site she opens
@@ -25,5 +25,5 @@ Date ideas live in the `PLANETS` array.
 5. **Deployments** → Redeploy, so the new variables take effect.
 6. Test once yourself, then open `/admin.html`, enter your key, and you'll see the answer.
 
-What gets saved: when she taps Yes (with how many times she pressed No first), and her final ticket
+What gets saved: when she taps Yes (with how many times she pressed No first), and her final plan
 (plan, night, moon, time). No personal data beyond the name you put in the link.

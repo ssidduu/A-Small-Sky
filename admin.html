@@ -62,7 +62,7 @@ async function load(){
   $("msg").textContent = `${answers.length} event${answers.length > 1 ? "s" : ""} saved.`;
   const t = answers.find(a => a.stage === "ticket");
   const hero = t ? `<div class="hero">
-      <div class="k">Latest ticket · ${esc(when(t.at))}</div>
+      <div class="k">Latest plan · ${esc(when(t.at))}</div>
       <div class="big">She said yes${t.her ? ", " + esc(t.her) : ""} ♡</div>
       <div class="grid">
         <div><div class="k">Plan</div><div class="v">${esc(t.plan)}</div></div>
@@ -73,7 +73,7 @@ async function load(){
       <div class="k">Pressed "No" ${t.noCount} time${t.noCount === 1 ? "" : "s"} first</div>
     </div>` : `<div class="hero"><div class="big">She said yes ♡</div><div class="k">She hasn't picked the plan yet</div></div>`;
   const list = answers.map(a => `<div class="row">
-      <span class="pill ${a.stage}">${a.stage === "ticket" ? "ticket" : "said yes"}</span>
+      <span class="pill ${a.stage}">${a.stage === "ticket" ? "plan" : "said yes"}</span>
       <span>${a.stage === "ticket" ? `${esc(a.plan)} · ${esc(a.night)} · ${esc(a.time)}` : `after ${a.noCount} × No`}</span>
       <span class="when">${esc(when(a.at))}${a.her ? " · " + esc(a.her) : ""}</span></div>`).join("");
   $("out").innerHTML = hero + `<div class="k">All events</div><div class="list">${list}</div>`;
