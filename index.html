@@ -197,7 +197,7 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
 
 <!-- 00 intro -->
 <section class="scene on" id="intro" aria-live="polite">
-  <div class="label" id="stamp">Transmission</div>
+  <div class="label" id="stamp">Incoming signal</div>
   <h1 id="hello"></h1>
   <p class="type" id="hello2"></p>
   <button class="btn primary" id="lookUp" style="opacity:0">Look up ✦</button>
@@ -389,7 +389,7 @@ function typeInto(el, text, speed=45){
   });
 }
 const now = new Date();
-$("stamp").innerHTML = `Transmission · <b>${now.toLocaleDateString("en-GB").replaceAll("/", ".")}</b> · ${now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}`;
+$("stamp").innerHTML = `Incoming signal from <b>${HIM}</b> · <b>${now.toLocaleDateString("en-GB").replaceAll("/", ".")}</b> · ${now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}`;
 (async () => {
   await new Promise(r => setTimeout(r, 700));
   // written in one stroke: a left-to-right reveal keeps the script letters joined
