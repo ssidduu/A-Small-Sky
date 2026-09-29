@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#04060d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@1,400;1,500&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: full-screen night sky canvas; each chapter is a centered scene that fades/blurs in over it. One look only: night. */
 :root{
@@ -70,7 +70,22 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
 .type .w{white-space:nowrap;display:inline}
 .type .w > span{opacity:0;transition:opacity .08s}
 .type .w > span.v{opacity:1}
-#hello2{max-width:30ch;text-wrap:balance;font-size:clamp(17px,2.4vw,20px);line-height:1.5}
+/* intro: handwritten greeting + elegant italic line */
+#hello{
+  font-family:"Pinyon Script", "Snell Roundhand", "Apple Chancery", cursive;
+  font-size:clamp(64px,15vw,136px);line-height:1.25;letter-spacing:0;
+  padding:0 .25em;color:var(--gold);
+  text-shadow:0 0 28px rgba(255,160,70,.45), 0 0 80px rgba(255,140,50,.25);
+  clip-path:inset(-20% 100% -20% 0);
+}
+#hello.write{animation:write 2.2s cubic-bezier(.45,.05,.3,1) forwards}
+@keyframes write{to{clip-path:inset(-20% -5% -20% 0)}}
+#hello2{
+  font-family:"Cormorant Garamond", "Instrument Serif", Georgia, serif;font-style:italic;font-weight:500;
+  color:var(--star);opacity:.92;max-width:26ch;text-wrap:balance;
+  font-size:clamp(22px,3.4vw,30px);line-height:1.35;letter-spacing:.005em;
+}
+@media (prefers-reduced-motion:reduce){#hello{clip-path:none}}
 
 /* 02 ask */
 .ask .row{min-height:64px}
@@ -183,7 +198,7 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
 <!-- 00 intro -->
 <section class="scene on" id="intro" aria-live="polite">
   <div class="label" id="stamp">Transmission</div>
-  <h1 class="type" id="hello"></h1>
+  <h1 id="hello"></h1>
   <p class="type" id="hello2"></p>
   <button class="btn primary" id="lookUp" style="opacity:0">Look up ✦</button>
 </section>
@@ -377,7 +392,10 @@ const now = new Date();
 $("stamp").innerHTML = `Transmission · <b>${now.toLocaleDateString("en-GB").replaceAll("/", ".")}</b> · ${now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}`;
 (async () => {
   await new Promise(r => setTimeout(r, 700));
-  await typeInto($("hello"), HER ? `Hey ${HER},` : "Hey you,", 70);
+  // written in one stroke: a left-to-right reveal keeps the script letters joined
+  $("hello").textContent = HER ? `Hey ${HER},` : "Hey you,";
+  $("hello").classList.add("write");
+  await new Promise(r => setTimeout(r, reduce ? 0 : 2000));
   await typeInto($("hello2"), "I couldn't give you the whole sky, so I built you a small one.", 32);
   $("lookUp").style.opacity = 1;
 })();
