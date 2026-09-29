@@ -1,7 +1,7 @@
 # A Small Sky ✦
 
 A deep-space site to ask someone out. She's asked the question (the "No" button dims the sky and
-eventually melts), picks a planet (the plan), picks a night by the real moon phase, and gets a
+eventually melts), picks a planet (the plan), picks a day on a calendar, and gets a
 moonlit "It's a date" note. Her answers save automatically, and you read them on a private page.
 
 ```

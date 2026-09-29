@@ -126,19 +126,27 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .picked{font-family:var(--f-display);font-style:italic;font-size:26px;color:var(--gold);min-height:1.2em}
 
-/* 04 moons */
-.moons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:640px}
-.moon{
-  width:78px;background:rgba(246,241,231,.04);border:1px solid rgba(246,241,231,.12);border-radius:16px;
-  padding:12px 6px 10px;cursor:pointer;color:var(--star);font:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;
-  transition:border-color .2s, background .2s, transform .2s;
-}
-.moon svg{width:40px;height:40px}
-.moon .d{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em}
-.moon .ph{font-size:10px;color:var(--dim);line-height:1.2;min-height:2.4em}
-.moon:hover{transform:translateY(-3px);border-color:rgba(246,241,231,.35)}
-.moon[aria-pressed="true"]{border-color:var(--gold);background:rgba(255,190,100,.12)}
-.moon:focus-visible,.chip:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+/* 04 calendar */
+.cal{width:min(100%,380px);background:rgba(251,243,230,.04);border:1px solid rgba(251,243,230,.12);border-radius:22px;
+  padding:16px 14px 14px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.cal-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px 12px}
+.cal-month{font-family:"Cormorant Garamond", Georgia, serif;font-style:italic;font-weight:500;font-size:26px;line-height:1}
+.cal-month span{font-family:var(--f-mono);font-style:normal;font-size:11px;letter-spacing:.18em;color:var(--dim);margin-left:8px}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:34px;height:34px;border-radius:50%;border:1px solid rgba(251,243,230,.2);background:none;color:var(--star);
+  font:inherit;font-size:16px;cursor:pointer;display:grid;place-items:center}
+.cal-nav button:disabled{opacity:.2;cursor:default}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;font-variant-numeric:tabular-nums}
+.cal-dow{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;color:var(--dim);text-align:center;padding:4px 0 6px}
+.cal-day{aspect-ratio:1;border:0;border-radius:50%;background:none;color:var(--star);font:inherit;font-size:15px;cursor:pointer;
+  position:relative;transition:background .2s, color .2s, transform .2s}
+.cal-day:hover:not(:disabled){background:rgba(251,243,230,.1)}
+.cal-day:disabled{color:rgba(251,243,230,.2);cursor:default}
+.cal-day.wknd:not(:disabled){color:var(--gold)}
+.cal-day.today::after{content:"";position:absolute;left:50%;bottom:14%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--dim)}
+.cal-day[aria-pressed="true"]{background:var(--gold);color:#3b1a05;font-weight:700;box-shadow:0 0 24px rgba(255,170,80,.6);transform:scale(1.05)}
+.cal-day:focus-visible,.cal-nav button:focus-visible,.chip:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.picked-day{font-family:"Cormorant Garamond", Georgia, serif;font-style:italic;font-size:22px;color:var(--gold);min-height:1.3em}
 .chip{
   font:inherit;font-size:14px;cursor:pointer;border-radius:999px;padding:10px 16px;background:transparent;color:var(--star);
   border:1px solid rgba(246,241,231,.2);display:flex;flex-direction:column;align-items:center;gap:1px;
@@ -218,8 +226,15 @@ p{margin:0;color:var(--dim);max-width:34ch;line-height:1.55;font-size:16px}
 <!-- 04 night -->
 <section class="scene scroll" id="night">
   <div class="label">Step <b>03</b> / 03 · Pick a night</div>
-  <h2>The moon's <em>calendar</em>, not mine.</h2>
-  <div class="moons" id="moons"></div>
+  <h2>Pick a <em>night</em>, any night.</h2>
+  <div class="cal" id="cal">
+    <div class="cal-head">
+      <div class="cal-month" id="calMonth"></div>
+      <div class="cal-nav"><button id="calPrev" aria-label="Previous month">‹</button><button id="calNext" aria-label="Next month">›</button></div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+  <div class="picked-day" id="pickedDay" aria-live="polite"></div>
   <div class="row" id="times">
     <button class="chip" aria-pressed="false" data-v="Lazy afternoon" data-t="1 – 4 pm">Lazy afternoon<small>1 – 4 pm</small></button>
     <button class="chip" aria-pressed="false" data-v="Golden hour" data-t="5 – 7 pm">Golden hour<small>5 – 7 pm</small></button>
@@ -433,7 +448,7 @@ PLANETS.forEach(p => {
 });
 $("toNight").onclick = () => go("night");
 
-/* ── 04 moons: real phases for the next 7 nights ── */
+/* ── 04 calendar (moon phase is kept only to draw the moon at the end) ── */
 const SYNODIC = 29.530588853, REF_NEW = Date.UTC(2000, 0, 6, 18, 14);
 function phaseOf(d){ const days = (d - REF_NEW)/864e5; return ((days % SYNODIC) + SYNODIC) % SYNODIC / SYNODIC; }
 function phaseName(p){
@@ -450,22 +465,44 @@ function moonSVG(p){
   return `<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#16242e"/>
     <path d="${d}" fill="#f6f1e7"/><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(246,241,231,.25)"/></svg>`;
 }
-const moons = $("moons");
 const dayFmt = new Intl.DateTimeFormat("en-IN", {weekday:"short", day:"numeric", month:"short"});
-for(let i=1;i<=7;i++){
-  const d = new Date(); d.setDate(d.getDate() + i); d.setHours(21, 0, 0, 0);
-  const p = phaseOf(d), name = phaseName(p), label = dayFmt.format(d);
-  const b = document.createElement("button");
-  b.className = "moon"; b.setAttribute("aria-pressed", "false");
-  b.setAttribute("aria-label", `${label}, ${name}`);
-  b.innerHTML = `${moonSVG(p)}<span class="d">${i === 1 ? "Tmrw" : d.toLocaleDateString("en-IN", {weekday:"short"})} ${d.getDate()}</span><span class="ph">${name}</span>`;
-  b.onclick = () => {
-    moons.querySelectorAll(".moon").forEach(x => x.setAttribute("aria-pressed", "false"));
-    b.setAttribute("aria-pressed", "true");
-    state.day = label; state.moon = name; state.phase = p; chime(i+1); checkNight();
-  };
-  moons.appendChild(b);
+const longFmt = new Intl.DateTimeFormat("en-IN", {weekday:"long", day:"numeric", month:"long"});
+const today = new Date(); today.setHours(0,0,0,0);
+const firstOk = new Date(today); firstOk.setDate(today.getDate() + 1);   // from tomorrow
+const lastOk = new Date(today); lastOk.setDate(today.getDate() + 60);    // up to ~2 months ahead
+let view = new Date(firstOk.getFullYear(), firstOk.getMonth(), 1), picked = null;
+function renderCal(){
+  const y = view.getFullYear(), m = view.getMonth();
+  $("calMonth").innerHTML = `${view.toLocaleDateString("en-IN", {month:"long"})}<span>${y}</span>`;
+  $("calPrev").disabled = new Date(y, m, 0) < firstOk;
+  $("calNext").disabled = new Date(y, m + 1, 1) > lastOk;
+  const g = $("calGrid"); g.innerHTML = "";
+  ["Mo","Tu","We","Th","Fr","Sa","Su"].forEach(d => g.insertAdjacentHTML("beforeend", `<div class="cal-dow" aria-hidden="true">${d}</div>`));
+  const lead = (new Date(y, m, 1).getDay() + 6) % 7;                      // Monday-first
+  for(let i=0;i<lead;i++) g.insertAdjacentHTML("beforeend", "<div></div>");
+  const days = new Date(y, m + 1, 0).getDate();
+  for(let n=1;n<=days;n++){
+    const d = new Date(y, m, n), wd = d.getDay();
+    const b = document.createElement("button");
+    b.className = "cal-day" + (wd === 0 || wd === 6 ? " wknd" : "") + (+d === +today ? " today" : "");
+    b.textContent = n; b.disabled = d < firstOk || d > lastOk;
+    b.setAttribute("aria-label", longFmt.format(d));
+    b.setAttribute("aria-pressed", picked && +picked === +d ? "true" : "false");
+    b.onclick = () => {
+      picked = d;
+      g.querySelectorAll(".cal-day").forEach(x => x.setAttribute("aria-pressed", "false"));
+      b.setAttribute("aria-pressed", "true");
+      const at9 = new Date(d); at9.setHours(21);
+      state.day = dayFmt.format(d); state.phase = phaseOf(at9); state.moon = phaseName(state.phase);
+      $("pickedDay").textContent = longFmt.format(d);
+      chime(n % 10); checkNight();
+    };
+    g.appendChild(b);
+  }
 }
+$("calPrev").onclick = () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); renderCal(); };
+$("calNext").onclick = () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); renderCal(); };
+renderCal();
 $("times").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if(!b) return;
   $("times").querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", "false"));
@@ -485,13 +522,13 @@ function save(stage){
 
 /* ── 05 the night ── */
 function ticketText(){
-  return `✦ It's a date ✦\n${state.plan}\n${state.day}, ${state.time}\nUnder a ${state.moon.toLowerCase()}.`;
+  return `✦ It's a date ✦\n${state.plan}\n${state.day}, ${state.time}`;
 }
 $("toPass").onclick = () => {
   const esc = t => t.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
   const when = state.time.split(" (")[0].toLowerCase();
   $("bigMoon").innerHTML = moonSVG(state.phase);
-  $("dateLine").innerHTML = `<b>${esc(state.day)}</b>, ${esc(when)}. ${esc(state.plan)}, under a ${esc(state.moon.toLowerCase())}.`;
+  $("dateLine").innerHTML = `<b>${esc(state.day)}</b>, ${esc(when)}. ${esc(state.plan)}.`;
   $("sign").textContent = HIM;
   const msg = encodeURIComponent(ticketText());
   const num = (CONFIG.whatsapp || "").replace(/\D/g, "");
