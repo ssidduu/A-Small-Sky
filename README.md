@@ -11,9 +11,9 @@ api/answer.js    saves answers (POST) and lists them for you (GET, needs your ke
 ```
 
 ## Personalise
-In `index.html`, edit `CONFIG` near the top of the script (her name, your name, WhatsApp number).
+In `index.html`, edit `CONFIG` near the top of the script. Her name defaults to "Siriiiiiiii".
 The WhatsApp button only appears if saving fails, as a backup.
-Or leave her name empty and put it in the link: `https://your-site.vercel.app/?to=Ananya`
+Any `?to=` in the link overrides it: `https://your-site.vercel.app/?to=Ananya`
 Date ideas live in the `PLANETS` array.
 
 ## Deploy (about 5 minutes)
